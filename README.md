@@ -1,4 +1,4 @@
-# BBSCoin PHP Api
+# BBSCoin PHP API
 
 For creating Walletd or Web Wallet(API) based app
 
