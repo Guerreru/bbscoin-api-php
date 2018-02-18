@@ -69,7 +69,7 @@ class BBSCoinApi {
     public static function sendTransaction($walletd, $address, $real_price, $sendto) {
         $req_data = array(
           'params' => array(
-              'anonymity' => 5,
+              'anonymity' => 0,
               'fee' => 50000000,
               'unlockTime' => 0,
               'changeAddress' => $address,
