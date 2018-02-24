@@ -28,6 +28,12 @@ class BBSCoinApi {
     private static $online_api_site_id  = '';
     private static $online_api_site_key = '';
 
+    // Set Site Info
+    public static function setSiteInfo($site_id, $site_key) {
+        self::$online_api_site_id = $site_id;
+        self::$online_api_site_key = $site_key;
+    }
+
     // Send Request
     public static function getUrlContent($url, $data_string) {
         $ch = curl_init();
