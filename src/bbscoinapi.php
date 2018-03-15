@@ -76,6 +76,7 @@ class BBSCoinApi {
     // Online Wallet callback
     public static function recvCallback() {
         if ($_GET['sign'] && $_GET['ts']) {
+
             if (time() - $_GET['ts'] > 300 || $_GET['ts'] - time() > 300) {
                 echo json_encode(array(
                     'success' => false,
@@ -83,6 +84,8 @@ class BBSCoinApi {
                 ));
                 exit;
             }
+
+            $data_string = file_get_contents("php://input");
             if (self::sign($data_string, $_GET['ts']) != $_GET['sign']) {
                 echo json_encode(array(
                     'success' => false,
@@ -90,8 +93,8 @@ class BBSCoinApi {
                 ));
                 exit;
             }
-            $data = file_get_contents("php://input");
-            $json_data = json_decode($data, true);
+
+            $json_data = json_decode($data_string, true);
             if (!$json_data) {
                 echo json_encode(array(
                     'success' => false,
