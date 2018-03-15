@@ -102,6 +102,12 @@ class BBSCoinApi {
 
             BBSCoinApiPartner::noticeUser($json_data['data']['uin'], $json_data['data']['type'], $json_data['data']['point']);
             BBSCoinApiPartner::adjustPoint($json_data['data']['uin'], $json_data['data']['point']);
+
+            echo json_encode(array(
+                'success' => true,
+                'code' => 0
+            ));
+            exit;
         }
     }
 
