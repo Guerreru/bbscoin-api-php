@@ -62,13 +62,47 @@ class BBSCoinApi {
     }
 
     // Generate Sign
-    public static function sign($data_string) {
-        $ts = time();
+    public static function sign($data_string, $ts) {
+        if (!$ts) {
+            $ts = time();
+        }
         $sign = hash_hmac('sha256', $data_string.$ts, self::$online_api_site_key);
         return array(
             'sign' => $sign,
             'ts' => $ts
         );
+    }
+
+    // Online Wallet callback
+    public static function recvCallback() {
+        if ($_GET['sign'] && $_GET['ts']) {
+            if (time() - $_GET['ts'] > 300 || $_GET['ts'] - time() > 300) {
+                echo json_encode(array(
+                    'success' => false,
+                    'code' => 1
+                ));
+                exit;
+            }
+            if (self::sign($data_string, $_GET['ts']) != $_GET['sign']) {
+                echo json_encode(array(
+                    'success' => false,
+                    'code' => 2
+                ));
+                exit;
+            }
+            $data = file_get_contents("php://input");
+            $json_data = json_decode($data, true);
+            if (!$json_data) {
+                echo json_encode(array(
+                    'success' => false,
+                    'code' => 3
+                ));
+                exit;
+            }
+
+            BBSCoinApiPartner::noticeUser($json_data['data']['uin'], $json_data['data']['type'], $json_data['data']['point']);
+            BBSCoinApiPartner::adjustPoint($json_data['data']['uin'], $json_data['data']['point']);
+        }
     }
 
     // Send Transaction
@@ -126,3 +160,15 @@ class BBSCoinApi {
 
 }
 
+// Class for site interface
+class BBSCoinApiPartner {
+
+    public static function noticeUser($uin, $type, $point) {
+        // todo for your code
+    }
+
+    public static function adjustPoint($uin, $point) {
+        // todo for your code
+    }
+
+}
