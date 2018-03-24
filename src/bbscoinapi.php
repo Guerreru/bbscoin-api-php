@@ -25,6 +25,80 @@
 
 class BBSCoinApi {
 
+    // Send Request
+    public static function getUrlContent($url, $data_string) {
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'BBSCoin');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        $data = curl_exec($ch);
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return $data;
+    }
+
+    // Send Transaction
+    public static function sendTransaction($walletd, $address, $real_price, $sendto, $fee = 50000000) {
+        $req_data = array(
+          'params' => array(
+              'anonymity' => 0,
+              'fee' => $fee,
+              'unlockTime' => 0,
+              'changeAddress' => $address,
+              "transfers" => array(
+               0 => array(
+                    'amount' => $real_price,
+                    'address' => $sendto,
+                )
+              )
+          ),
+          "jsonrpc" => "2.0",
+          "method" => "sendTransaction"
+        );
+
+        $result = self::getUrlContent($walletd, json_encode($req_data)); 
+        $rsp_data = json_decode($result, true);
+        
+        return $rsp_data;
+    }
+
+    // Get Status
+    public static function getStatus($walletd) {
+        $status_req_data = array(
+          "jsonrpc" => "2.0",
+          "method" => "getStatus"
+        );
+
+        $result = self::getUrlContent($walletd, json_encode($status_req_data)); 
+        $status_rsp_data = json_decode($result, true);
+        return $status_rsp_data;
+    }
+
+    // Get Transaction
+    public static function getTransaction($walletd, $transaction_hash) {
+        $req_data = array(
+          "params" => array(
+          	"transactionHash" => $transaction_hash
+          ),
+          "jsonrpc" => "2.0",
+          "method" => "getTransaction"
+        );
+
+        $result = self::getUrlContent($walletd, json_encode($req_data)); 
+        $rsp_data = json_decode($result, true);
+
+        return $rsp_data;
+    }
+
+}
+
+class BBSCoinApiWebWallet {
+
     private static $online_api_site_id  = '';
     private static $online_api_site_key = '';
 
@@ -103,25 +177,18 @@ class BBSCoinApi {
                 exit;
             }
 
-            BBSCoinApiPartner::noticeUser($json_data['data']['uin'], $json_data['data']['type'], $json_data['data']['point']);
-            BBSCoinApiPartner::adjustPoint($json_data['data']['uin'], $json_data['data']['point']);
-
-            echo json_encode(array(
-                'success' => true,
-                'code' => 0
-            ));
+            echo json_encode(BBSCoinApiPartner::callback($json_data));
             exit;
         }
     }
 
-    // Send Transaction
-    public static function sendTransaction($walletd, $address, $real_price, $sendto) {
+    // send
+    public static function send($walletd, $address, $real_price, $sendto, $orderid, $uin, $points, $fee = 50000000) {
         $req_data = array(
           'params' => array(
-              'anonymity' => 0,
-              'fee' => 50000000,
-              'unlockTime' => 0,
-              'changeAddress' => $address,
+              'minxin' => 0,
+              'fee' => $fee,
+              'address' => $address,
               "transfers" => array(
                0 => array(
                     'amount' => $real_price,
@@ -129,39 +196,36 @@ class BBSCoinApi {
                 )
               )
           ),
-          "jsonrpc" => "2.0",
-          "method" => "sendTransaction"
+          'webhook' => array(
+            'data' => array(
+                'action' => 'withdraw',
+                'orderid' => $orderid,
+                'uin' => $uin,
+                'points' => $points,
+            )
+          )
         );
 
-        $result = self::getUrlContent($walletd, json_encode($req_data)); 
+        $result = self::getUrlContent($walletd.'/api/wallet/send', json_encode($req_data)); 
         $rsp_data = json_decode($result, true);
         
         return $rsp_data;
     }
 
-    // Get Status
-    public static function getStatus($walletd) {
-        $status_req_data = array(
-          "jsonrpc" => "2.0",
-          "method" => "getStatus"
-        );
-
-        $result = self::getUrlContent($walletd, json_encode($status_req_data)); 
-        $status_rsp_data = json_decode($result, true);
-        return $status_rsp_data;
-    }
-
-    // Get Transaction
-    public static function getTransaction($walletd, $transaction_hash) {
+    // check_transaction
+    public static function check_transaction($walletd, $transaction_hash, $paymentId) {
         $req_data = array(
-          "params" => array(
-          	"transactionHash" => $transaction_hash
+          'params' => array(
+          	'hash' => $transaction_hash,
+          	'paymentId' => $paymentId,
           ),
-          "jsonrpc" => "2.0",
-          "method" => "getTransaction"
+          'data' => array(
+            'action' => 'deposit',
+            'uin' => $uin,
+          )
         );
 
-        $result = self::getUrlContent($walletd, json_encode($req_data)); 
+        $result = self::getUrlContent($walletd.'/api/webhook/create', json_encode($req_data)); 
         $rsp_data = json_decode($result, true);
 
         return $rsp_data;
@@ -169,15 +233,3 @@ class BBSCoinApi {
 
 }
 
-// Class for site interface
-class BBSCoinApiPartner {
-
-    public static function noticeUser($uin, $type, $point) {
-        // todo for your code
-    }
-
-    public static function adjustPoint($uin, $point) {
-        // todo for your code
-    }
-
-}
