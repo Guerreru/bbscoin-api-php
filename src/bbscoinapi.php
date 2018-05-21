@@ -136,7 +136,7 @@ class BBSCoinApiWebWallet {
     }
 
     // Generate Sign
-    public static function sign($data_string, $ts) {
+    public static function sign($data_string, $ts = 0) {
         if (!$ts) {
             $ts = time();
         }
