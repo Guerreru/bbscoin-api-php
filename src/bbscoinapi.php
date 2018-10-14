@@ -101,6 +101,9 @@ class BBSCoinApiWebWallet {
 
     private static $online_api_site_id  = '';
     private static $online_api_site_key = '';
+    private static $online_api_no_secure = false;
+    private static $timeout = 5;
+    private static $connect_timeout = 3;
 
     // Set Site Info
     public static function setSiteInfo($site_id, $site_key) {
@@ -123,14 +126,28 @@ class BBSCoinApiWebWallet {
         }
 
         curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'BBSCoin');
+        curl_setopt($ch, CURLOPT_USERAGENT, 'BBSCoin PHP Client/1.0');
         curl_setopt($ch, CURLOPT_POST, true);
+        if (self::online_api_no_secure) {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+            curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+            curl_setopt($ch, CURLOPT_SSL_CIPHER_LIST, 'TLSv1');
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+        ));
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::$connect_timeout);
+        curl_setopt($ch, CURLOPT_TIMEOUT, self::$timeout);
         $data = curl_exec($ch);
         $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if (curl_errno($ch)) {
+            $data = json_encode(array(
+                'success' => false,
+                'message' => 'curl_error, code='.curl_errno($ch).', msg='.curl_error($ch),
+            ));
+        }
         curl_close($ch);
         return $data;
     }
